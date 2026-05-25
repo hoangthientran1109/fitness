@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-950 text-gray-100 antialiased;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+  input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 8px;
+    background: #374151;
+    border-radius: 4px;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    background: #10b981;
+    border-radius: 50%;
+    margin-top: -10px;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    transition: box-shadow 0.15s;
+  }
+  input[type='range']::-webkit-slider-thumb:active {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.25);
+  }
+  input[type='range']::-moz-range-track {
+    height: 8px;
+    background: #374151;
+    border-radius: 4px;
+  }
+  input[type='range']::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: #10b981;
+    border-radius: 50%;
+    border: none;
+  }
+}
+
+@layer components {
+  .stat-card {
+    @apply bg-gray-900 rounded-xl p-4 border border-gray-800;
+  }
+  .btn-primary {
+    @apply bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-400 text-white px-4 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center;
+  }
+  .btn-secondary {
+    @apply bg-gray-800 hover:bg-gray-700 active:bg-gray-600 text-gray-200 px-4 py-3 rounded-lg font-medium transition-colors border border-gray-700 min-h-[44px] flex items-center justify-center;
+  }
+  .btn-danger {
+    @apply bg-red-600/20 hover:bg-red-600/30 active:bg-red-600/40 text-red-400 px-4 py-3 rounded-lg font-medium transition-colors border border-red-600/30 min-h-[44px] flex items-center justify-center;
+  }
+  .input-field {
+    @apply bg-gray-800 border border-gray-700 rounded-lg px-3 py-3 text-gray-100 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent min-h-[44px];
+  }
+  .select-field {
+    @apply bg-gray-800 border border-gray-700 rounded-lg px-3 py-3 text-gray-100 w-full focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none min-h-[44px];
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #1e293b;
+}
+.recharts-text {
+  fill: #94a3b8;
+  font-size: 12px;
+}

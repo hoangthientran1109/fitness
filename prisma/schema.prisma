@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model UserProfile {
+  id             String   @id @default(cuid())
+  name           String
+  gender         String
+  age            Int
+  height         Float
+  weight         Float
+  bodyFat        Float?
+  activityLevel  String
+  experienceLevel String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  goals          FitnessGoal[]
+  rules          PersonalRule[]
+  workoutPlans   WorkoutPlan[]
+  nutritionPlans NutritionPlan[]
+  workoutLogs    WorkoutLog[]
+  nutritionLogs  NutritionLog[]
+  bodyMetrics    BodyMetric[]
+  dailyCheckIns  DailyCheckIn[]
+  progressRecords ProgressRecord[]
+  aiInsights     AiCoachInsight[]
+}
+
+model FitnessGoal {
+  id           String   @id @default(cuid())
+  userId       String
+  user         UserProfile @relation(fields: [userId], references: [id])
+  goalType     String   // fat_loss, muscle_gain, body_recomposition, strength, general_health
+  startWeight  Float
+  targetWeight Float?
+  targetBodyFat Float?
+  targetDate   DateTime?
+  priority     String   @default("primary") // primary, secondary
+  status       String   @default("active") // active, completed, paused
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PersonalRule {
+  id          String   @id @default(cuid())
+  userId      String
+  user        UserProfile @relation(fields: [userId], references: [id])
+  ruleType    String   // training, nutrition, recovery, lifestyle
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  user        UserProfile @relation(fields: [userId], references: [id])
+  name        String
+  type        String   // push_pull_legs, upper_lower, full_body, strength, hypertrophy, custom
+  startDate   DateTime
+  endDate     DateTime?
+  daysPerWeek Int
+  status      String   @default("active") // active, completed, paused
+  createdAt   DateTime @default(now())
+
+  days        WorkoutDay[]
+}
+
+model WorkoutDay {
+  id         String   @id @default(cuid())
+  planId     String
+  plan       WorkoutPlan @relation(fields: [planId], references: [id])
+  dayIndex   Int      // 0-6 (Mon-Sun)
+  date       DateTime
+  focus      String   // e.g. "Push - Chest Focus", "Legs - Quad Focus"
+  notes      String?
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  exercises  WorkoutExercise[]
+  logs       WorkoutLog[]
+}
+
+model WorkoutExercise {
+  id           String   @id @default(cuid())
+  workoutDayId String
+  workoutDay   WorkoutDay @relation(fields: [workoutDayId], references: [id])
+  exerciseId   String
+  exercise     Exercise? @relation(fields: [exerciseId], references: [id])
+  sets         Int
+  reps         String   // e.g. "8-12", "3-5"
+  restSeconds  Int
+  rpe          Int?
+  tempo        String?
+  notes        String?
+  order        Int      @default(0)
+}
+
+model Exercise {
+  id              String            @id @default(cuid())
+  name            String
+  category        String
+  mainMuscle      String
+  secondaryMuscle String?
+  equipment       String
+  difficulty      String
+  instruction     String
+  commonMistakes  String?
+  alternatives    String?
+  imageUrl        String?
+  createdAt       DateTime          @default(now())
+
+  workoutExercises WorkoutExercise[]
+  exerciseLogs     ExerciseLog[]
+}
+
+model WorkoutLog {
+  id           String   @id @default(cuid())
+  userId       String
+  user         UserProfile @relation(fields: [userId], references: [id])
+  workoutDayId String
+  workoutDay   WorkoutDay @relation(fields: [workoutDayId], references: [id])
+  date         DateTime
+  completed    Boolean  @default(false)
+  skippedReason String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  exercises    ExerciseLog[]
+}
+
+model ExerciseLog {
+  id            String   @id @default(cuid())
+  workoutLogId  String
+  workoutLog    WorkoutLog @relation(fields: [workoutLogId], references: [id])
+  exerciseId    String
+  exercise      Exercise @relation(fields: [exerciseId], references: [id])
+  setsCompleted Int
+  reps          String
+  weight        Float?
+  rpe           Int?
+  notes         String?
+}
+
+model NutritionPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          UserProfile @relation(fields: [userId], references: [id])
+  caloriesTarget Int
+  proteinTarget  Int
+  carbTarget    Int
+  fatTarget     Int
+  waterTarget   Int
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime @default(now())
+
+  meals         Meal[]
+}
+
+model Meal {
+  id              String @id @default(cuid())
+  nutritionPlanId String
+  plan            NutritionPlan @relation(fields: [nutritionPlanId], references: [id])
+  name            String
+  mealType        String // breakfast, lunch, dinner, snack, pre_workout, post_workout
+  calories        Int
+  protein         Int
+  carbs           Int
+  fat             Int
+  ingredients     String?
+  instructions    String?
+}
+
+model NutritionLog {
+  id       String   @id @default(cuid())
+  userId   String
+  user     UserProfile @relation(fields: [userId], references: [id])
+  date     DateTime
+  calories Int      @default(0)
+  protein  Int      @default(0)
+  carbs    Int      @default(0)
+  fat      Int      @default(0)
+  water    Int      @default(0)
+  notes    String?
+  createdAt DateTime @default(now())
+}
+
+model BodyMetric {
+  id       String   @id @default(cuid())
+  userId   String
+  user     UserProfile @relation(fields: [userId], references: [id])
+  date     DateTime
+  weight   Float?
+  bodyFat  Float?
+  waist    Float?
+  chest    Float?
+  arm      Float?
+  thigh    Float?
+  hip      Float?
+  shoulder Float?
+  createdAt DateTime @default(now())
+}
+
+model DailyCheckIn {
+  id           String   @id @default(cuid())
+  userId       String
+  user         UserProfile @relation(fields: [userId], references: [id])
+  date         DateTime
+  sleepHours   Float?
+  energy       Int?     // 1-10
+  stress       Int?     // 1-10
+  mood         Int?     // 1-10
+  soreness     Int?     // 1-10
+  hunger       Int?     // 1-10
+  motivation   Int?     // 1-10
+  painNote     String?
+  digestionNote String?
+  dailyNote    String?
+  createdAt    DateTime @default(now())
+}
+
+model ProgressRecord {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  UserProfile @relation(fields: [userId], references: [id])
+  date                  DateTime
+  adherenceScore        Int?
+  workoutCompletionRate Float?
+  caloriesAdherence     Float?
+  proteinAdherence      Float?
+  weightTrend           String?  // stable, losing, gaining
+  strengthTrend         String?  // stable, improving, declining
+  createdAt             DateTime @default(now())
+}
+
+model AiCoachInsight {
+  id             String   @id @default(cuid())
+  userId         String
+  user           UserProfile @relation(fields: [userId], references: [id])
+  type           String   // daily_suggestion, weekly_review, warning, adjustment, encouragement
+  title          String
+  content        String
+  recommendation String?
+  createdAt      DateTime @default(now())
+}
