@@ -73,13 +73,16 @@ MỤC TIÊU HIỆN TẠI (User: Thien):
    - Cân nặng mục tiêu: 72kg
    - Body Fat mục tiêu: 14%
 
-CHỈ SỐ NGUY HIỂM (CẢNH BÁO):
-   - Cân nặng giảm > 1kg/tuần → quá nhanh, tăng calo
-   - Cân nặng tăng > 0.5kg/tuần → đang dư calo
-   - Protein < 140g/ngày → không đủ xây dựng cơ
-   - Ngủ < 6 tiếng → giảm intensity tập 20% (theo quy tắc đã đặt)
-   - Stress > 7 → thêm 1 ngày recovery
-   - Đau gối → thay squat bằng leg press
+CHỈ SỐ NGUY HIỂM (CẢNH BÁO TỰ ĐỘNG):
+   - Cân nặng giảm > 1kg/tuần → 🔴 Banner đỏ ở Tiến Độ + Cần Cải Thiện ở Tổng Kết Tuần
+   - Cân nặng tăng > 0.5kg/tuần → 🟡 Banner vàng ở Tiến Độ + Cần Cải Thiện ở Tổng Kết Tuần
+   - Mất cơ (giảm cân + tăng mỡ) → 🔴 Banner đỏ mất cơ ở Tiến Độ
+   - Cân nặng giảm 0.3-1kg/tuần → ✅ Điểm Tốt ở Tổng Kết Tuần (tốc độ lý tưởng)
+   - Cân nặng tăng 0.1-0.5kg/tuần → ✅ Điểm Tốt ở Tổng Kết Tuần (phù hợp tăng cơ)
+   - Protein < 140g/ngày → Cần Cải Thiện ở Tổng Kết Tuần (nếu <80% target)
+   - Ngủ < 6 tiếng → HLV AI cảnh báo giảm intensity 20%
+   - Stress > 7 → HLV AI khuyên thêm ngày recovery
+   - Đau gối → HLV AI gợi ý thay squat bằng leg press
 
 TẦN SUẤT THEO DÕI:
    - Check-in:        Mỗi sáng (bắt buộc)
