@@ -271,7 +271,7 @@ DATABASE DINH DƯỠNG VIỆT NAM (dùng để estimate):
 - 1 phần cơm gà xối mỡ ≈ 700 calo, 35g đạm, 90g carb, 25g béo
 - 1 tô phở bò ≈ 500 calo, 25g đạm, 70g carb, 15g béo
 - 1 phần bún thịt nướng ≈ 550 calo, 20g đạm, 80g carb, 18g béo
-- Nước: tính cả nước lọc, trà, cà phê. Mặc định thêm 2000ml nước nếu không đề cập.
+- Nước: chỉ tính nước có trong mô tả (nước canh, nước phở, trà, cafe, sinh tố...). KHÔNG thêm nước lọc mặc định. Nếu mô tả không có món chứa nước thì water = 0.
 
 Trả về JSON (KHÔNG text ngoài JSON): {"calories":tổng_calo,"protein":g,"carbs":g,"fat":g,"water":ml,"items":[{"name":"tên món","calories":calo_món,"protein":g,"carbs":g,"fat":g}]}`;
 
