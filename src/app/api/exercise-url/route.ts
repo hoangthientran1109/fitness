@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { getExerciseImage, REPO_URL } from '@/lib/exercise-images';
 
