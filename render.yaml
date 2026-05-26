@@ -4,18 +4,22 @@ services:
     env: node
     region: singapore
     plan: free
-    buildCommand: npm install && npx prisma generate && npx prisma db push --accept-data-loss && npm run build
-    startCommand: npm start
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma db push --accept-data-loss && npx prisma db seed && next start -p ${PORT:-3000}
     envVars:
       - key: DATABASE_URL
-        value: file:/data/dev.db
+        fromDatabase:
+          name: fitness-db
+          property: connectionString
       - key: OLLAMA_API_KEY
         sync: false
       - key: OLLAMA_ENDPOINT
         sync: false
       - key: OLLAMA_MODEL
         sync: false
-    disk:
-      name: sqlite-data
-      mountPath: /data
-      sizeGB: 1
+
+  - type: postgres
+    name: fitness-db
+    region: singapore
+    plan: free
+    ipAllowList: []
