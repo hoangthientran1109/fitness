@@ -71,8 +71,13 @@ export default function TodayPage() {
           calories: d.estimate.calories || 0, protein: d.estimate.protein || 0,
           carbs: d.estimate.carbs || 0, fat: d.estimate.fat || 0, water: d.estimate.water || 0,
         });
+        setEstimating(false);
+        return;
       }
-    } catch {}
+      if (d.error) alert(d.error);
+    } catch {
+      alert('Không thể kết nối AI. Kiểm tra kết nối hoặc thử lại sau.');
+    }
     setEstimating(false);
   };
 

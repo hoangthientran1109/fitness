@@ -79,7 +79,7 @@ async function callOllama(systemPrompt: string, userPrompt: string): Promise<str
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     const res = await fetch(`${ENDPOINT}/chat/completions`, {
       method: 'POST',
@@ -276,10 +276,10 @@ DATABASE DINH DƯỠNG VIỆT NAM (dùng để estimate):
 Trả về JSON (KHÔNG text ngoài JSON): {"calories":tổng_calo,"protein":g,"carbs":g,"fat":g,"water":ml,"items":[{"name":"tên món","calories":calo_món,"protein":g,"carbs":g,"fat":g}]}`;
 
   const res = await callOllama('Bạn là chuyên gia dinh dưỡng fitness. Trả về JSON ước lượng macro từ mô tả bữa ăn tiếng Việt. KHÔNG thêm text ngoài JSON.', prompt);
-  if (!res) return { calories: 0, protein: 0, carbs: 0, fat: 0, water: 0, items: [] };
+  if (!res) return fallbackEstimate(description);
 
   const match = res.match(/\{[\s\S]*\}/);
-  if (!match) return { calories: 0, protein: 0, carbs: 0, fat: 0, water: 0, items: [] };
+  if (!match) return fallbackEstimate(description);
   try {
     const parsed = JSON.parse(match[0]);
     return {
@@ -291,8 +291,60 @@ Trả về JSON (KHÔNG text ngoài JSON): {"calories":tổng_calo,"protein":g,"
       items: Array.isArray(parsed.items) ? parsed.items : [],
     };
   } catch {
-    return { calories: 0, protein: 0, carbs: 0, fat: 0, water: 0, items: [] };
+    return fallbackEstimate(description);
   }
+}
+
+function fallbackEstimate(description: string): { calories: number; protein: number; carbs: number; fat: number; water: number; items: { name: string; calories: number; protein: number; carbs: number; fat: number }[] } {
+  const text = description.toLowerCase();
+  let calories = 0, protein = 0, carbs = 0, fat = 0, water = 0;
+  const items: { name: string; calories: number; protein: number; carbs: number; fat: number }[] = [];
+
+  const foodDb: [string, number, number, number, number, number][] = [
+    ['tô phở', 1, 500, 25, 70, 15], ['phở bò', 1, 500, 25, 70, 15], ['phở gà', 1, 500, 25, 70, 15],
+    ['tô bún', 1, 550, 20, 80, 18], ['bún bò', 1, 550, 25, 70, 18], ['bún thịt', 1, 550, 20, 80, 18],
+    ['chén cơm', 1, 260, 6, 58, 0], ['bát cơm', 1, 260, 6, 58, 0], ['cơm trắng', 1, 260, 6, 58, 0],
+    ['gà', 100, 165, 31, 0, 3.6], ['ức gà', 100, 165, 31, 0, 3.6], ['gà xé', 50, 82, 15, 0, 2],
+    ['cá hồi', 100, 208, 20, 0, 13], ['cá thu', 100, 205, 24, 0, 12],
+    ['thịt bò', 100, 250, 26, 0, 15], ['thịt heo', 100, 242, 21, 0, 17],
+    ['trứng', 1, 70, 6, 0, 5], ['quả trứng', 1, 70, 6, 0, 5],
+    ['bánh mì', 1, 200, 8, 35, 5], ['ổ bánh mì', 1, 250, 10, 40, 7], ['lát bánh mì', 1, 80, 3, 15, 1],
+    ['sữa', 250, 150, 8, 12, 8], ['ly sữa', 1, 150, 8, 12, 8], ['bạc xỉu', 1, 150, 4, 20, 6],
+    ['cafe sữa', 1, 120, 3, 15, 6], ['cà phê sữa', 1, 120, 3, 15, 6],
+    ['chuối', 1, 105, 1.3, 27, 0], ['táo', 1, 80, 0.5, 20, 0], ['quả táo', 1, 80, 0.5, 20, 0],
+    ['canh', 1, 100, 5, 8, 3], ['rau', 100, 35, 3, 7, 0], ['bông cải', 100, 35, 3, 7, 0],
+    ['cơm gà xối mỡ', 1, 700, 35, 90, 25], ['cơm gà', 1, 600, 30, 80, 20],
+    ['cơm tấm', 1, 600, 25, 80, 22], ['bún thịt nướng', 1, 550, 20, 80, 18],
+    ['sữa chua', 200, 120, 20, 8, 2], ['sữa chua hy lạp', 200, 130, 22, 8, 0],
+    ['khoai lang', 100, 86, 1.6, 20, 0], ['dầu', 15, 120, 0, 0, 14],
+  ];
+
+  let remaining = text;
+  for (const [keyword, serving, cal, pro, cb, ft] of foodDb) {
+    const count = (remaining.match(new RegExp(`\\d+\\s*${keyword}s?`, 'gi')) || []).length
+      || (remaining.match(new RegExp(keyword, 'gi')) || []).length;
+    if (count > 0) {
+      const actualCount = Math.min(count, 4);
+      const mult = count > 1 ? (remaining.match(/(\d+)/g)?.map(Number)[0] || count) / (keyword.includes('100') ? 100 : 1) : 1;
+      calories += cal * actualCount * (keyword.includes('100') ? 1 : 1);
+      protein += pro * actualCount * (keyword.includes('100') ? 1 : 1);
+      carbs += cb * actualCount * (keyword.includes('100') ? 1 : 1);
+      fat += ft * actualCount * (keyword.includes('100') ? 1 : 1);
+      items.push({ name: keyword, calories: Math.round(cal * actualCount), protein: Math.round(pro * actualCount), carbs: Math.round(cb * actualCount), fat: Math.round(ft * actualCount) });
+      remaining = remaining.replace(new RegExp(`${keyword}s?`, 'gi'), '');
+    }
+  }
+
+  if (calories === 0) {
+    calories = 600;
+    protein = 25;
+    carbs = 70;
+    fat = 20;
+    water = 0;
+    items.push({ name: 'Ước lượng chung', calories: 600, protein: 25, carbs: 70, fat: 20 });
+  }
+
+  return { calories: Math.round(calories), protein: Math.round(protein), carbs: Math.round(carbs), fat: Math.round(fat), water, items };
 }
 
 export async function generateDailyInsight(): Promise<AICoachOutput> {
