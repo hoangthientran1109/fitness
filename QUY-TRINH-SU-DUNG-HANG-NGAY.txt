@@ -4,60 +4,63 @@
   App: https://personal-fitness-os.onrender.com
 ========================================
 
-PHẦN 1: 7 VIỆC CẦN LÀM MỖI NGÀY
+PHẦN 1: 6 VIỆC CẦN LÀM MỖI NGÀY
 ========================================
 
 1. CHECK-IN BUỔI SÁNG (tối đa 2 phút)
-   - Vào tab Home → mục Check-in nhanh
+   - Vào tab "Điểm Danh" (sidebar trái)
    - Điền: Giấc ngủ (giờ), Năng lượng (1-10), Stress (1-10)
    - Đánh giá nhanh: Mood, Soreness (đau cơ), Động lực
    - Ghi chú nếu có đau/chấn thương
 
 2. XEM GỢI Ý HLV AI
-   - Tab Home → mục "HLV AI" hoặc "Phân Tích AI"
-   - AI sẽ phân tích dựa trên dữ liệu hôm trước của bạn
+   - Tab Home (Bảng Điều Khiển) → mục "HLV AI" hoặc bấm nút "Phân Tích AI"
+   - AI phân tích dựa trên dữ liệu hôm qua + check-in sáng nay
    - Đọc kỹ phần "Khuyến nghị" (recommendation)
 
 3. TẬP LUYỆN THEO LỊCH
-   - Tab Today → xem bài tập hôm nay
+   - Tab "Hôm Nay" (sidebar trái) → xem bài tập hôm nay
    - Log từng bài: số set, reps, mức tạ
-   - Xem chỉ số "Lần trước" để biết cần tăng tạ hay giữ
+   - Xem chỉ số "Lần trước" so sánh để biết cần tăng tạ hay giữ
    - Nếu tăng tạ → tag màu xanh +2.5kg hiện ra
-   - Nếu skip buổi tập → chọn lý do (đau, mệt, lịch bận...)
+   - Nếu skip buổi tập → chọn lý do inline (đau, mệt, lịch bận...)
    - Tập xong → tick completed
+   - Lưu ý: Nếu banner "Tuần Giảm Tải" (Deload) hiện → giảm 40-50% tạ tuần này
 
-4. BANNER DELOAD (nếu hiện)
-   - App tự phát hiện nếu bạn đã tập nặng 5+ tuần liên tiếp
-   - Banner khuyên: "Giảm 40-50% tạ tuần này"
-   - Nếu xuất hiện → làm theo, đừng bỏ qua!
-
-5. LOG DINH DƯỠNG
-   - Tab Nutrition
-   - Có 2 cách:
-     a) Nhập mô tả bữa ăn bằng tiếng Việt → bấm "Ước lượng Macro" → AI trả về calories/protein/carbs/fat
-     b) Nhập thủ công nếu biết chính xác số liệu
+4. LOG DINH DƯỠNG
+   - Tab "Dinh Dưỡng" (sidebar trái)
+   - Có 3 cách:
+     a) Nhập mô tả bữa ăn bằng tiếng Việt → bấm "AI Tính Macro" → AI trả calories/protein/carbs/fat
+     b) Bấm "✨ Gợi ý món mới" → AI tạo thực đơn MỖI NGÀY KHÁC NHAU
+     c) Nhập thủ công nếu biết chính xác số liệu
    - Theo dõi: Calories, Protein, Carbs, Fat, Nước (ml)
+   - Lưu ý: AI không cộng nước mặc định — chỉ tính nước trong mô tả
 
-6. KIỂM TRA CUỐI NGÀY
-   - Vào tab Home → xem Dashboard
-   - Kiểm tra: % hoàn thành tuần này, calo đã ăn, protein đạt %
+5. KIỂM TRA CUỐI NGÀY
+   - Tab Home (Bảng Điều Khiển)
+   - Kiểm tra: % hoàn thành tuần, calo đã ăn, protein đạt %
+   - Xem biểu đồ xu hướng cân nặng (nếu đã nhập)
 
-7. ĐO CHỈ SỐ CƠ THỂ (1-2 lần/tuần, sáng sớm)
-   - Tab Progress → Body Metrics
-   - Nhập: Cân nặng, Body Fat % (nếu có máy đo)
-   - Tùy chọn: Vòng eo, ngực, bắp tay, đùi
-   - App tự vẽ đồ thị xu hướng
+6. ĐO CHỈ SỐ CƠ THỂ (1-2 lần/tuần, sáng sớm lúc đói)
+   - Tab "Tiến Độ" (sidebar trái)
+   - NGAY ĐẦU TRANG có form "Ghi Nhận Chỉ Số Hôm Nay"
+   - Nhập bắt buộc: Cân nặng (kg)
+   - Nhập tùy chọn: Body Fat (%), Vòng eo, Ngực, Bắp tay, Đùi, Hông, Vai (cm)
+   - Bấm "💾 Lưu Chỉ Số"
+   - App tự vẽ đồ thị xu hướng ở ngay bên dưới
+   - Lưu ý: Nhập xong refresh trang để biểu đồ cập nhật
 
 
 PHẦN 2: THEO DÕI HÀNG TUẦN
 ========================================
 
-Chủ nhật hàng tuần mở tab Weekly Review để xem:
+Chủ nhật hàng tuần mở tab "Tổng Kết Tuần" để xem:
 
    - Tổng số buổi tập hoàn thành / bỏ lỡ
-   - Mức tạ trung bình từng bài (để biết có tiến bộ không)
+   - Mức tạ trung bình từng bài (có tiến bộ không)
    - Calories và Protein trung bình 7 ngày
-   - So sánh với mục tiêu (Goal) đã đặt
+   - So sánh với mục tiêu đã đặt
+   - Phân tích HLV AI tổng hợp tuần
 
 Nếu có chỉ số nào dưới 70% → điều chỉnh tuần sau.
 
@@ -83,7 +86,7 @@ TẦN SUẤT THEO DÕI:
    - Log tập:         Mỗi buổi tập (bắt buộc)
    - Log dinh dưỡng:  Mỗi bữa ăn chính (khuyến nghị)
    - Cân nặng:        1-2 lần/tuần, sáng sớm lúc đói
-   - Body fat:        1 lần/tuần (nếu có máy)
+   - Body fat:        1 lần/tuần (nếu có máy đo)
    - Số đo cơ thể:    2 tuần 1 lần
    - Weekly review:   Chủ nhật
 
@@ -92,13 +95,13 @@ PHẦN 4: LỊCH TẬP HIỆN TẠI (5 NGÀY PPL)
 ========================================
 
 Ngày 1: ĐẨY – Ngực & Tay Sau
-   - Bench Press / Đẩy ngực dumbbell
+   - Đẩy ngực barbell / dumbbell
    - Đẩy vai
    - Skull Crusher / Đẩy tay sau
 
 Ngày 2: KÉO – Lưng & Tay Trước
    - Hít xà / Kéo xô máy
-   - Chèo barbell / Chèo cable
+   - Chèo barbell / cable
    - Cuốn tạ tay trước / Hammer curl
 
 Ngày 3: CHÂN – Đùi Trước & Mông
@@ -107,7 +110,7 @@ Ngày 3: CHÂN – Đùi Trước & Mông
    - Hip thrust / Lunge
 
 Ngày 4: ĐẨY – Vai & Tay Sau
-   - Overhead press
+   - Đẩy vai qua đầu
    - Nâng vai giữa / vai trước
    - Đẩy tay sau cable
 
@@ -119,7 +122,22 @@ Ngày 5: KÉO – Xô & Tay Trước
 Thứ 7 + CN: Nghỉ hoặc Cardio nhẹ / Mobility
 
 
-PHẦN 5: QUY TẮC ĐÃ ĐẶT (TAB SETTINGS)
+PHẦN 5: CÁC TAB TRONG APP (TÊN TIẾNG VIỆT)
+========================================
+
+Sidebar trái:
+   - Bảng Điều Khiển (Home)    → Dashboard + HLV AI + Check-in nhanh
+   - Hôm Nay (Today)           → Bài tập hôm nay + Log tập + Deload banner
+   - Lịch Tập (Workout)        → Xem toàn bộ lịch tập các ngày
+   - Dinh Dưỡng (Nutrition)    → Log macro + AI ước lượng + Gợi ý món mới
+   - Điểm Danh (Check-in)      → Form check-in đầy đủ 7 chỉ số
+   - Tiến Độ (Progress)        → GHI CHỈ SỐ + Biểu đồ cân nặng, số đo, calo
+   - Tổng Kết Tuần (Weekly)    → Báo cáo tuần + Phân tích AI
+   - Thư Viện Bài Tập          → 50+ động tác có hình ảnh
+   - Cài Đặt (Settings)        → Quy tắc, mục tiêu, thông tin cá nhân
+
+
+PHẦN 6: QUY TẮC ĐÃ ĐẶT (TAB CÀI ĐẶT)
 ========================================
 
 Những quy tắc này app tự áp dụng khi phân tích:
@@ -134,28 +152,39 @@ Những quy tắc này app tự áp dụng khi phân tích:
    - Stress > 7 → thêm 1 recovery day
 
 
-PHẦN 6: CÂU HỎI THƯỜNG GẶP
+PHẦN 7: CÂU HỎI THƯỜNG GẶP
 ========================================
 
 Q: Quên log tập hôm qua, làm sao?
-A: Vào tab Today hoặc Workout Log, chọn ngày hôm qua để điền bổ sung.
+A: Vào tab "Hôm Nay", chọn ngày hôm qua để điền bổ sung.
 
 Q: App báo "đang tải..." lâu?
-A: Free Render ngủ sau 15 phút. Đợi ~50 giây là wake up. Sau đó load bình thường.
+A: Free Render ngủ sau 15 phút không dùng. Đợi ~50 giây là wake up.
 
 Q: Muốn đổi mục tiêu (goal)?
-A: Tab Settings → Fitness Goal → chỉnh target weight / body fat.
+A: Tab "Cài Đặt" → mục Fitness Goal → chỉnh target weight / body fat.
 
 Q: Muốn thêm bài tập mới không có trong thư viện?
-A: Tab Exercises → Add Exercise → điền tên, nhóm cơ, hướng dẫn.
+A: Tab "Thư Viện Bài Tập" → Add Exercise → điền tên, nhóm cơ, hướng dẫn.
 
 Q: HLV AI có trả lời chat được không?
-A: Hiện AI phân tích tự động dựa trên dữ liệu, không có chat. Phân tích hiện ở tab Home và Weekly Review.
+A: Hiện AI phân tích tự động dựa trên dữ liệu, không có chat riêng.
+   Phân tích hiện ở tab Home và Tổng Kết Tuần.
+
+Q: Gợi ý món ăn mỗi ngày có khác nhau không?
+A: CÓ. Bấm "✨ Gợi ý món mới" trong tab Dinh Dưỡng.
+   AI tạo thực đơn khác nhau mỗi ngày dựa trên mục tiêu calo/protein
+   và loại ngày (tập/nghỉ).
 
 Q: Data có bị mất không?
 A: Không. Data lưu trên PostgreSQL của Render.com. An toàn 90 ngày với free tier.
+   Sau 90 ngày cần backup hoặc upgrade.
+
+Q: Nhập chỉ số cơ thể ở đâu?
+A: Tab "Tiến Độ" → NGAY ĐẦU TRANG có form "Ghi Nhận Chỉ Số Hôm Nay".
+   Nhập xong bấm "💾 Lưu Chỉ Số", refresh trang để biểu đồ cập nhật.
 
 ========================================
-  FILE TẠO NGÀY: 2026-05-26
+  FILE CẬP NHẬT: 2026-05-26
   APP URL: https://personal-fitness-os.onrender.com
 ========================================

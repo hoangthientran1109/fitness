@@ -8,6 +8,7 @@ export default function ProgressPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ weight: '', bodyFat: '', waist: '', chest: '', arm: '', thigh: '', hip: '', shoulder: '' });
   const [saveMsg, setSaveMsg] = useState('');
+  const [warnings, setWarnings] = useState<any[]>([]);
 
   useEffect(() => { fetch('/api/progress').then(r => r.json()).then(d => { setData(d); setLoading(false); }); }, []);
 
@@ -37,7 +38,13 @@ export default function ProgressPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Lỗi lưu');
+      const json = await res.json();
       setSaveMsg('Đã lưu! Refresh trang để thấy biểu đồ cập nhật.');
+      if (json.warnings) {
+        setWarnings(json.warnings);
+      } else {
+        setSaveMsg('Đã lưu chỉ số thành công.');
+      }
       setForm({ weight: '', bodyFat: '', waist: '', chest: '', arm: '', thigh: '', hip: '', shoulder: '' });
     } catch {
       setSaveMsg('Lỗi khi lưu, thử lại.');
@@ -72,6 +79,19 @@ export default function ProgressPage() {
         </div>
         {saveMsg && (
           <div className={`mb-3 p-2 rounded text-sm ${saveMsg.includes('Đã lưu') ? 'bg-emerald-900/30 text-emerald-300' : 'bg-red-900/30 text-red-300'}`}>{saveMsg}</div>
+        )}
+        {warnings.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {warnings.map((w: any, i: number) => (
+              <div key={i} className={`p-3 rounded-lg border ${w.type === 'danger' ? 'bg-red-900/20 border-red-800 text-red-300' : 'bg-amber-900/20 border-amber-800 text-amber-300'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">{w.type === 'danger' ? '🔴' : '🟡'}</span>
+                  <span className="text-sm font-semibold">{w.message}</span>
+                </div>
+                <p className="text-xs opacity-80 ml-6">{w.action}</p>
+              </div>
+            ))}
+          </div>
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div><label className="text-xs text-gray-500">Cân nặng (kg) *</label><input className="input-field" type="number" step="0.1" placeholder="VD: 74.2" value={form.weight} onChange={e => setForm(p => ({ ...p, weight: e.target.value }))} /></div>
