@@ -18,7 +18,7 @@ services:
       - key: OLLAMA_MODEL
         sync: false
 
-  - type: postgres
+  - type: psql
     name: fitness-db
     region: singapore
     plan: free
