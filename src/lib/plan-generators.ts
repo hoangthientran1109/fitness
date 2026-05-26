@@ -117,10 +117,12 @@ export async function generateWorkoutPlan(params: GenerateWorkoutPlanParams) {
       { index: 2, focus: 'Chân - Đùi Trước & Mông', pool: LEG_EXERCISES },
       { index: 3, focus: 'Đẩy - Vai & Tay Sau', pool: PUSH_EXERCISES },
       { index: 4, focus: 'Kéo - Xô & Vai Sau', pool: PULL_EXERCISES },
+      { index: 5, focus: 'Chân - Đùi Sau & Mông', pool: LEG_EXERCISES },
+      { index: 6, focus: 'Toàn Thân - Compound', pool: [...PUSH_EXERCISES, ...PULL_EXERCISES, ...LEG_EXERCISES].slice(0, 10) },
     ];
 
     for (let week = 0; week < 4; week++) {
-      for (let i = 0; i < params.daysPerWeek && i < 5; i++) {
+      for (let i = 0; i < params.daysPerWeek && i < dayConfigs.length; i++) {
         const dayConfig = dayConfigs[i];
         const d = new Date(startOfWeek);
         d.setDate(d.getDate() + week * 7 + dayConfig.index);
