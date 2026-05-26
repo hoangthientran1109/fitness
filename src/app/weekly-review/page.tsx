@@ -43,8 +43,25 @@ export default function WeeklyReviewPage() {
 
     if (avgSoreness > 7) rd.wentWrong.push(`Đau cơ cao ${avgSoreness}/10. Giảm nhẹ volume tập.`);
 
+    // Phân tích thay đổi cân nặng
+    const absWeightChange = Math.abs(weightChange);
+    if (weightChange < -1) {
+      rd.wentWrong.push(`Cân nặng giảm ${absWeightChange.toFixed(1)}kg — quá nhanh (>1kg/tuần). Tăng calo 200-300/ngày, kiểm tra protein.`);
+    } else if (weightChange < -0.3 && weightChange >= -1) {
+      if (calorieAdherence >= 90 && proteinAdherence >= 80) rd.wentWell.push(`Cân nặng giảm ${absWeightChange.toFixed(1)}kg — tốc độ lý tưởng cho body recomposition.`);
+    } else if (weightChange > 0.5) {
+      rd.wentWrong.push(`Cân nặng tăng ${weightChange.toFixed(1)}kg — dư calo (>0.5kg/tuần). Giảm 200-300 calo/ngày hoặc tăng cardio.`);
+    } else if (weightChange > 0.1 && weightChange <= 0.5) {
+      rd.wentWell.push(`Cân nặng tăng nhẹ ${weightChange.toFixed(1)}kg — phù hợp nếu đang tăng cơ.`);
+    }
+
+    // Nutritional recommendations adjusted by weight trend
+    let nutritionRec = proteinAdherence >= 80 ? 'Theo dõi macro đang tốt. Tiếp tục nhé.' : 'Ưu tiên đạm. Mỗi bữa nên có nguồn đạm nạc.';
+    if (weightChange < -1) nutritionRec = `Cân nặng giảm ${absWeightChange.toFixed(1)}kg trong 1 tuần — quá nhanh! Tăng calo 200-300/ngày, đảm bảo đạm trước.`;
+    else if (weightChange > 0.5) nutritionRec = `Cân nặng tăng ${weightChange.toFixed(1)}kg — dư calo. Giảm 200-300 calo/ngày, tăng rau xanh.`;
+
     rd.trainingRec = completionRate >= 85 ? 'Giữ nguyên lịch tập. Cân nhắc tăng tạ dần trên các bài chính.' : 'Tập trung vào sự đều đặn. 3 buổi chất lượng hơn 5 buổi bỏ dở.';
-    rd.nutritionRec = proteinAdherence >= 80 ? 'Theo dõi macro đang tốt. Tiếp tục nhé.' : 'Ưu tiên đạm. Mỗi bữa nên có nguồn đạm nạc.';
+    rd.nutritionRec = nutritionRec;
     rd.recoveryRec = avgSleep < 7 ? 'Ưu tiên giấc ngủ. Không màn hình trước ngủ, giờ ngủ/thức đều đặn.' : 'Phục hồi đang tốt.';
 
     if (completionRate < 60 || proteinAdherence < 60) rd.status = 'OFF_TRACK';
