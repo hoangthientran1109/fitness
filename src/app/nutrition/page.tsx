@@ -4,15 +4,12 @@ import ProgressBar from '@/components/ProgressBar';
 
 export default function NutritionPage() {
   const [data, setData] = useState<any>(null);
-  const [log, setLog] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0, water: 0 });
   const [loading, setLoading] = useState(true);
   const [suggestedMeals, setSuggestedMeals] = useState<any[]>([]);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestError, setSuggestError] = useState('');
 
-  useEffect(() => { fetch('/api/today').then(r => r.json()).then(d => { setData(d); if (d.todayLog) setLog({ calories: d.todayLog.calories, protein: d.todayLog.protein, carbs: d.todayLog.carbs, fat: d.todayLog.fat, water: d.todayLog.water }); setLoading(false); }); }, []);
-
-  const handleLog = async () => { await fetch('/api/nutrition', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(log) }); window.location.reload(); };
+  useEffect(() => { fetch('/api/today').then(r => r.json()).then(d => { setData(d); setLoading(false); }); }, []);
 
   const handleSuggest = async () => {
     setSuggesting(true);
@@ -47,25 +44,35 @@ export default function NutritionPage() {
         <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
           <h2 className="text-lg font-semibold text-white mb-4">Chỉ Tiêu Hàng Ngày</h2>
           {nutritionPlan ? (<>
-            <ProgressBar label="Calo" current={log.calories} target={nutritionPlan.caloriesTarget} color="emerald" />
+            <ProgressBar label="Calo" current={data.todayLog?.calories || 0} target={nutritionPlan.caloriesTarget} color="emerald" />
             <div className="mt-4 space-y-3">
-              <ProgressBar label="Đạm" current={log.protein} target={nutritionPlan.proteinTarget} unit="g" color="blue" />
-              <ProgressBar label="Carb" current={log.carbs} target={nutritionPlan.carbTarget} unit="g" color="amber" />
-              <ProgressBar label="Béo" current={log.fat} target={nutritionPlan.fatTarget} unit="g" color="red" />
-              <ProgressBar label="Nước" current={log.water} target={nutritionPlan.waterTarget} unit="ml" color="blue" />
+              <ProgressBar label="Đạm" current={data.todayLog?.protein || 0} target={nutritionPlan.proteinTarget} unit="g" color="blue" />
+              <ProgressBar label="Carb" current={data.todayLog?.carbs || 0} target={nutritionPlan.carbTarget} unit="g" color="amber" />
+              <ProgressBar label="Béo" current={data.todayLog?.fat || 0} target={nutritionPlan.fatTarget} unit="g" color="red" />
+              <ProgressBar label="Nước" current={data.todayLog?.water || 0} target={nutritionPlan.waterTarget} unit="ml" color="blue" />
             </div></>) : <p className="text-gray-400 text-sm">Hoàn thành onboarding để có kế hoạch.</p>}
         </div>
 
         <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-          <h2 className="text-lg font-semibold text-white mb-4">Ghi Nhận Hôm Nay</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs text-gray-500">Calo</label><input className="input-field" type="number" step="1" value={log.calories} onChange={e => setLog(p => ({ ...p, calories: parseInt(e.target.value) || 0 }))} /></div>
-            <div><label className="text-xs text-gray-500">Đạm (g)</label><input className="input-field" type="number" step="1" value={log.protein} onChange={e => setLog(p => ({ ...p, protein: parseInt(e.target.value) || 0 }))} /></div>
-            <div><label className="text-xs text-gray-500">Carb (g)</label><input className="input-field" type="number" step="1" value={log.carbs} onChange={e => setLog(p => ({ ...p, carbs: parseInt(e.target.value) || 0 }))} /></div>
-            <div><label className="text-xs text-gray-500">Béo (g)</label><input className="input-field" type="number" step="1" value={log.fat} onChange={e => setLog(p => ({ ...p, fat: parseInt(e.target.value) || 0 }))} /></div>
-            <div className="col-span-2"><label className="text-xs text-gray-500">Nước (ml)</label><input className="input-field" type="number" step="50" value={log.water} onChange={e => setLog(p => ({ ...p, water: parseInt(e.target.value) || 0 }))} /></div>
+          <h2 className="text-lg font-semibold text-white mb-4">Kiến Thức Dinh Dưỡng</h2>
+          <div className="space-y-3 text-sm">
+            <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
+              <h3 className="text-blue-300 font-semibold mb-1">Đạm (Protein) — Nguyên liệu xây dựng cơ</h3>
+              <p className="text-gray-400 leading-relaxed">Sửa chữa & phát triển mô cơ sau tập. Mỗi bữa nên có nguồn đạm nạc: ức gà, cá, trứng, đậu phụ, whey. Thiếu đạm = cơ không phục hồi, mất cơ khi giảm cân.</p>
+            </div>
+            <div className="bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
+              <h3 className="text-amber-300 font-semibold mb-1">Carb (Tinh Bột) — Nhiên liệu vận động</h3>
+              <p className="text-gray-400 leading-relaxed">Nguồn năng lượng chính cho não và cơ bắp khi tập. Carb phức tạp (gạo lứt, yến mạch, khoai lang) giải phóng năng lượng chậm, bền. Carb đơn (trái cây, mật ong) hấp thu nhanh — ăn trước/sau tập.</p>
+            </div>
+            <div className="bg-red-900/20 border border-red-800/30 rounded-lg p-3">
+              <h3 className="text-red-300 font-semibold mb-1">Béo (Fat) — Nội tiết & hấp thu</h3>
+              <p className="text-gray-400 leading-relaxed">Duy trì hormone (testosterone, estrogen), hấp thu vitamin A-D-E-K, bảo vệ khớp. Ưu tiên béo lành mạnh: dầu olive, cá hồi, bơ, hạnh nhân. Hạn chế đồ chiên rán, mỡ động vật chế biến.</p>
+            </div>
+            <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
+              <h3 className="text-blue-300 font-semibold mb-1">Nước — Vận chuyển & thải độc</h3>
+              <p className="text-gray-400 leading-relaxed">Chiếm ~60% cơ thể. Vận chuyển dinh dưỡng đến cơ, thải độc qua thận, điều hòa nhiệt độ. Uống đều trong ngày, không chờ khát. Tập nặng → bù thêm 500-1000ml.</p>
+            </div>
           </div>
-          <button onClick={handleLog} className="btn-primary w-full mt-4 text-sm">Ghi Nhận</button>
         </div>
       </div>
 
