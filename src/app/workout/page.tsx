@@ -70,8 +70,8 @@ export default function WorkoutPage() {
       </div>
 
       {view === 'daily' && (<div className="grid gap-4">{days.map(renderDay)}</div>)}
-      {view === 'weekly' && (<div className="space-y-8">{grouped.map(([week, weekDays]) => (<div key={week}><h3 className="text-sm font-semibold text-gray-400 mb-3">Tuần {new Date(week).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' })}</h3><div className="grid md:grid-cols-3 lg:grid-cols-5 gap-3">{weekDays.map(renderDay)}</div></div>))}</div>)}
-      {view === 'monthly' && (<div className="space-y-8">{grouped.map(([week, weekDays]) => (<div key={week}><h3 className="text-sm font-semibold text-gray-400 mb-3">Tuần {new Date(week).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' })}</h3><div className="grid md:grid-cols-3 lg:grid-cols-5 gap-3">{weekDays.map(renderDay)}</div></div>))}</div>)}
+      {view === 'weekly' && (<div className="space-y-8">{grouped.map(([week, weekDays]) => (<div key={week}><h3 className="text-sm font-semibold text-gray-400 mb-3">Tuần {new Date(week).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' })}</h3><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{weekDays.map(renderDay)}</div></div>))}</div>)}
+      {view === 'monthly' && (<div className="space-y-8">{grouped.map(([week, weekDays]) => (<div key={week}><h3 className="text-sm font-semibold text-gray-400 mb-3">Tuần {new Date(week).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' })}</h3><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{weekDays.map(renderDay)}</div></div>))}</div>)}
     </div>
   );
 }
