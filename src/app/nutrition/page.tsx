@@ -6,10 +6,28 @@ export default function NutritionPage() {
   const [data, setData] = useState<any>(null);
   const [log, setLog] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0, water: 0 });
   const [loading, setLoading] = useState(true);
+  const [suggestedMeals, setSuggestedMeals] = useState<any[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState('');
 
   useEffect(() => { fetch('/api/today').then(r => r.json()).then(d => { setData(d); if (d.todayLog) setLog({ calories: d.todayLog.calories, protein: d.todayLog.protein, carbs: d.todayLog.carbs, fat: d.todayLog.fat, water: d.todayLog.water }); setLoading(false); }); }, []);
 
   const handleLog = async () => { await fetch('/api/nutrition', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(log) }); window.location.reload(); };
+
+  const handleSuggest = async () => {
+    setSuggesting(true);
+    setSuggestError('');
+    try {
+      const res = await fetch('/api/nutrition/suggest', { method: 'POST' });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Lỗi tạo thực đơn');
+      setSuggestedMeals(d.meals || []);
+    } catch (e: any) {
+      setSuggestError(e.message);
+    } finally {
+      setSuggesting(false);
+    }
+  };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /></div>;
   if (!data) return null;
@@ -17,6 +35,9 @@ export default function NutritionPage() {
   const { nutritionPlan } = data;
 
   const mealTypeLabels: Record<string, string> = { breakfast: 'Bữa Sáng', lunch: 'Bữa Trưa', dinner: 'Bữa Tối', snack: 'Bữa Phụ', pre_workout: 'Trước Tập', post_workout: 'Sau Tập' };
+
+  const displayMeals = suggestedMeals.length > 0 ? suggestedMeals : (nutritionPlan?.meals || []);
+  const isSuggested = suggestedMeals.length > 0;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -49,12 +70,32 @@ export default function NutritionPage() {
       </div>
 
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-        <h2 className="text-lg font-semibold text-white mb-4">Bữa Ăn Gợi Ý</h2>
-        {nutritionPlan?.meals?.length > 0 ? (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">{isSuggested ? 'Thực Đơn Hôm Nay (AI Gợi Ý)' : 'Bữa Ăn Gợi Ý'}</h2>
+          <button
+            onClick={handleSuggest}
+            disabled={suggesting}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {suggesting ? (
+              <><span className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></span>Đang tạo...</>
+            ) : (
+              <>✨ Gợi ý món mới</>
+            )}
+          </button>
+        </div>
+
+        {suggestError && <div className="mb-3 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">{suggestError}</div>}
+
+        {isSuggested && (
+          <p className="text-xs text-emerald-400 mb-3">🤖 Thực đơn được AI tạo riêng cho hôm nay. Mỗi ngày bấm "Gợi ý món mới" để nhận thực đơn khác.</p>
+        )}
+
+        {displayMeals.length > 0 ? (
           <div className="grid md:grid-cols-3 gap-4">
-            {nutritionPlan.meals.map((m: any) => (
-              <div key={m.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
-                <div className="flex items-center justify-between mb-2"><span className="text-xs text-emerald-400 font-medium uppercase">{mealTypeLabels[m.mealType] || m.mealType}</span><span className="text-xs text-gray-500">{m.calories} cal</span></div>
+            {displayMeals.map((m: any, i: number) => (
+              <div key={m.id || i} className={`rounded-lg p-4 border ${isSuggested ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-gray-800/50 border-gray-700/50'}`}>
+                <div className="flex items-center justify-between mb-2"><span className={`text-xs font-medium uppercase ${isSuggested ? 'text-emerald-300' : 'text-emerald-400'}`}>{mealTypeLabels[m.mealType] || m.mealType}</span><span className="text-xs text-gray-500">{m.calories} cal</span></div>
                 <h3 className="text-sm font-semibold text-white mb-1">{m.name}</h3>
                 <div className="flex gap-3 text-xs text-gray-400"><span>Đ: {m.protein}g</span><span>C: {m.carbs}g</span><span>B: {m.fat}g</span></div>
                 {m.ingredients && <p className="text-xs text-gray-500 mt-2"><strong>Nguyên liệu:</strong> {m.ingredients}</p>}
