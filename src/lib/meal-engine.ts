@@ -283,3 +283,119 @@ export function formatMealInstructions(meal: GeneratedMeal): string {
 
   return lines.join('; ');
 }
+
+// ========== MEAL SWAP ==========
+
+export interface SwapOption {
+  food: FoodItem;
+  grams: number;
+  macros: { calories: number; protein: number; carbs: number; fat: number; fiber: number };
+}
+
+export function getSwapOptions(sourceFoodName: string, currentGrams: number): SwapOption[] {
+  const source = FOOD_DATABASE.find(f => f.name === sourceFoodName);
+  if (!source) return [];
+
+  const sourceMacro = calcMacro(source, currentGrams);
+  const sourceProtein = sourceMacro.protein;
+  const sourceCalories = sourceMacro.calories;
+
+  // Find alternative foods in the same category
+  let alternatives: FoodItem[];
+  if (source.category === 'protein') {
+    alternatives = PROTEIN_SOURCES.filter(f => f.name !== source.name);
+  } else if (source.category === 'carb') {
+    alternatives = CARB_SOURCES.filter(f => f.name !== source.name);
+  } else {
+    return [];
+  }
+
+  // Calculate grams needed for each alternative to match protein (for protein) or calories (for carbs)
+  const options: SwapOption[] = [];
+  for (const alt of alternatives) {
+    let grams: number;
+    if (source.category === 'protein') {
+      // Match protein content
+      grams = Math.round((sourceProtein / alt.proteinPer100g) * 100);
+      grams = Math.round(grams / 10) * 10; // Round to 10g
+      if (grams < 80) grams = Math.max(80, grams);
+      if (grams > 400) continue; // Too much
+    } else {
+      // Match calories
+      grams = Math.round((sourceCalories / alt.caloriesPer100g) * 100);
+      grams = Math.round(grams / 25) * 25;
+      if (grams < 100) grams = Math.max(100, grams);
+      if (grams > 400) continue;
+    }
+
+    const macros = calcMacro(alt, grams);
+    options.push({ food: alt, grams, macros });
+
+    if (options.length >= 3) break;
+  }
+
+  return options;
+}
+
+// ========== NUTRITION SCORE ==========
+
+export function calculateNutritionScore(todayLog: {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  water: number;
+  fiber?: number;
+}, targets: {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  water: number;
+}): { score: number; label: string; color: string; breakdown: { calScore: number; proScore: number; fiberScore: number; waterScore: number } } {
+  // Calories score (0-30)
+  const calRatio = targets.calories > 0 ? todayLog.calories / targets.calories : 0;
+  let calScore: number;
+  if (calRatio >= 0.85 && calRatio <= 1.15) calScore = 30;
+  else if (calRatio >= 0.7 && calRatio <= 1.3) calScore = 20;
+  else if (calRatio >= 0.5 && calRatio <= 1.5) calScore = 10;
+  else calScore = 0;
+
+  // Protein score (0-35) — protein is most important for body recomposition
+  const proRatio = targets.protein > 0 ? todayLog.protein / targets.protein : 0;
+  let proScore: number;
+  if (proRatio >= 0.9) proScore = 35;
+  else if (proRatio >= 0.75) proScore = 25;
+  else if (proRatio >= 0.6) proScore = 15;
+  else if (proRatio >= 0.4) proScore = 8;
+  else proScore = 0;
+
+  // Fiber score (0-20)
+  const fiber = todayLog.fiber || 0;
+  let fiberScore: number;
+  if (fiber >= 25) fiberScore = 20;
+  else if (fiber >= 18) fiberScore = 16;
+  else if (fiber >= 12) fiberScore = 12;
+  else if (fiber >= 6) fiberScore = 6;
+  else fiberScore = Math.round(fiber / 25 * 20);
+
+  // Water score (0-15)
+  const waterRatio = targets.water > 0 ? todayLog.water / targets.water : 0;
+  let waterScore: number;
+  if (waterRatio >= 0.9) waterScore = 15;
+  else if (waterRatio >= 0.7) waterScore = 12;
+  else if (waterRatio >= 0.5) waterScore = 8;
+  else if (waterRatio >= 0.3) waterScore = 4;
+  else waterScore = 0;
+
+  const totalScore = calScore + proScore + fiberScore + waterScore;
+
+  let label: string;
+  let color: string;
+  if (totalScore >= 85) { label = 'Xuất Sắc'; color = 'text-emerald-400'; }
+  else if (totalScore >= 70) { label = 'Tốt'; color = 'text-blue-400'; }
+  else if (totalScore >= 50) { label = 'Trung Bình'; color = 'text-amber-400'; }
+  else { label = 'Cần Cải Thiện'; color = 'text-red-400'; }
+
+  return { score: totalScore, label, color, breakdown: { calScore, proScore, fiberScore, waterScore } };
+}
