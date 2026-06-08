@@ -657,14 +657,14 @@ Trả về JSON (KHÔNG text ngoài JSON):
 
   const systemPrompt = 'Bạn là chuyên gia dinh dưỡng fitness. Trả về JSON thực đơn mỗi ngày khác nhau theo yêu cầu. KHÔNG thêm text ngoài JSON.';
   const res = await callOllama(systemPrompt, prompt);
-  if (!res) return generateFallbackMeals(context);
+  if (!res) return generateMealsFromEngine(context);
 
   const match = res.match(/\{[\s\S]*\}/);
-  if (!match) return generateFallbackMeals(context);
+  if (!match) return generateMealsFromEngine(context);
   try {
     const parsed = JSON.parse(match[0]);
     const meals = parsed.meals || parsed;
-    if (!Array.isArray(meals) || meals.length === 0) return generateFallbackMeals(context);
+    if (!Array.isArray(meals) || meals.length === 0) return generateMealsFromEngine(context);
     return meals.map((m: any) => ({
       name: m.name || m.ten || 'Món gợi ý',
       mealType: m.mealType || 'snack',
@@ -676,11 +676,11 @@ Trả về JSON (KHÔNG text ngoài JSON):
       instructions: m.instructions || m.cachlam || '',
     }));
   } catch {
-    return generateFallbackMeals(context);
+    return generateMealsFromEngine(context);
   }
 }
 
-function generateFallbackMeals(context: {
+function generateMealsFromEngine(context: {
   caloriesTarget: number;
   proteinTarget: number;
   carbTarget: number;
@@ -696,66 +696,7 @@ function generateFallbackMeals(context: {
   isWorkoutDay: boolean;
   workoutFocus?: string;
 }): { name: string; mealType: string; calories: number; protein: number; carbs: number; fat: number; ingredients: string; instructions: string }[] {
-  const ct = context.caloriesTarget;
-  const pt = context.proteinTarget;
-  const cct = context.carbTarget;
-  const ft = context.fatTarget;
-  const isWorkout = context.isWorkoutDay;
-
-  const variations = [
-    [
-      { name: 'Cháo Thịt Bằm + Trứng Luộc', mealType: 'breakfast', calories: Math.round(ct * 0.22), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.2), fat: Math.round(ft * 0.2), ingredients: '1 bát cháo thịt bằm (gạo 50g + thịt 80g), 2 quả trứng luộc, hành ngò', instructions: 'Nấu cháo với thịt bằm. Luộc trứng 7 phút. Rắc hành ngò.' },
-      { name: 'Cơm Tấm Sườn Nướng + Canh Khổ Qua', mealType: 'lunch', calories: Math.round(ct * 0.3), protein: Math.round(pt * 0.3), carbs: Math.round(cct * 0.3), fat: Math.round(ft * 0.3), ingredients: '150g sườn nướng, 200g cơm tấm, 1 chén canh khổ qua nhồi thịt, nước mắm', instructions: 'Nướng sườn với sả ớt. Dọn kèm cơm và canh nóng.' },
-      { name: 'Chuối + Whey Protein', mealType: isWorkout ? 'pre_workout' : 'snack', calories: Math.round(ct * 0.12), protein: Math.round(pt * 0.2), carbs: Math.round(cct * 0.15), fat: Math.round(ft * 0.1), ingredients: '1 quả chuối to, 1 muỗng whey (30g), 200ml nước', instructions: 'Xay hoặc trộn whey với nước, ăn kèm chuối.' },
-      { name: 'Cá Lóc Kho Tộ + Rau Muống Xào', mealType: 'dinner', calories: Math.round(ct * 0.28), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.35), ingredients: '200g cá lóc kho tộ, 150g cơm, 100g rau muống xào tỏi, 1 muỗng dầu', instructions: 'Kho cá với nước mắm đường. Xào rau muống với tỏi.' },
-      { name: 'Sữa Chua Hy Lạp + Hạnh Nhân', mealType: 'snack', calories: Math.round(ct * 0.08), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.1), fat: Math.round(ft * 0.15), ingredients: '200g sữa chua Hy Lạp, 20g hạnh nhân', instructions: 'Trộn sữa chua với hạnh nhân, để lạnh 10 phút trước khi ăn.' },
-    ],
-    [
-      { name: 'Bánh Mì Ốp La + Sữa Đậu Nành', mealType: 'breakfast', calories: Math.round(ct * 0.22), protein: Math.round(pt * 0.2), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.25), ingredients: '1 ổ bánh mì nhỏ, 2 trứng ốp la, 200ml sữa đậu nành không đường', instructions: 'Chiên trứng ốp la với dầu olive. Dọn kèm bánh mì và sữa đậu.' },
-      { name: 'Cơm Gà Xối Mỡ (ít dầu) + Canh', mealType: 'lunch', calories: Math.round(ct * 0.3), protein: Math.round(pt * 0.35), carbs: Math.round(cct * 0.3), fat: Math.round(ft * 0.3), ingredients: '180g gà luộc/xối ít dầu, 200g cơm, 1 chén canh rau, nước mắm gừng', instructions: 'Luộc gà chín tới. Dọn kèm cơm nóng và canh rau.' },
-      { name: 'Bánh Mì + Bơ Đậu Phộng', mealType: isWorkout ? 'pre_workout' : 'snack', calories: Math.round(ct * 0.12), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.15), fat: Math.round(ft * 0.15), ingredients: '2 lát bánh mì nguyên cám, 30g bơ đậu phộng', instructions: 'Quết bơ đậu phộng lên bánh mì. Ăn trước tập 60 phút.' },
-      { name: 'Bò Xào Bông Cải + Cơm Gạo Lứt', mealType: 'dinner', calories: Math.round(ct * 0.28), protein: Math.round(pt * 0.3), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.25), ingredients: '150g thịt bò thăn, 150g bông cải xanh, 150g gạo lứt, tỏi, dầu hào', instructions: 'Xào bò nhanh tay với bông cải. Nấu gạo lứt kỹ hơn cơm thường.' },
-      { name: 'Trứng Luộc + Sữa Tươi', mealType: 'snack', calories: Math.round(ct * 0.08), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.1), fat: Math.round(ft * 0.15), ingredients: '2 quả trứng luộc, 200ml sữa tươi không đường', instructions: 'Luộc trứng 7 phút. Uống sữa lạnh.' },
-    ],
-    [
-      { name: 'Bún Bò Huế (nhẹ)', mealType: 'breakfast', calories: Math.round(ct * 0.22), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.2), ingredients: '1 tô bún bò nhỏ (bún 150g + bò 100g), rau sống, chanh, ớt', instructions: 'Chần bún nóng. Thịt bò tái chín. Chan nước lèo ít mỡ.' },
-      { name: 'Cơm Cá Thu Hấp + Canh Cà Chua', mealType: 'lunch', calories: Math.round(ct * 0.3), protein: Math.round(pt * 0.3), carbs: Math.round(cct * 0.3), fat: Math.round(ft * 0.25), ingredients: '180g cá thu hấp, 200g cơm, 1 chén canh cà chua trứng, hành, ngò', instructions: 'Hấp cá với gừng sả. Nấu canh cà chua trứng.' },
-      { name: 'Sữa Chua + Granola', mealType: isWorkout ? 'pre_workout' : 'snack', calories: Math.round(ct * 0.12), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.15), fat: Math.round(ft * 0.15), ingredients: '200g sữa chua, 40g granola, 1 muỗng mật ong', instructions: 'Trộn sữa chua với granola và mật ong.' },
-      { name: 'Gà Nướng Mật Ong + Salad', mealType: 'dinner', calories: Math.round(ct * 0.28), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.3), ingredients: '180g ức gà nướng mật ong, 150g cơm, salad rau trộn dầu giấm', instructions: 'Ướp gà với mật ong, tỏi, tiêu. Nướng 25 phút ở 200 độ.' },
-      { name: 'Casein Pudding', mealType: 'snack', calories: Math.round(ct * 0.08), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.1), fat: Math.round(ft * 0.1), ingredients: '1 muỗng casein (30g), 200ml sữa, 10g hạt chia', instructions: 'Trộn casein với sữa và hạt chia. Để tủ lạnh 30 phút.' },
-    ],
-    [
-      { name: 'Phở Gà + Lòng Gà', mealType: 'breakfast', calories: Math.round(ct * 0.22), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.2), fat: Math.round(ft * 0.2), ingredients: '1 tô phở gà (phở 150g + gà xé 100g + lòng gà 50g), hành, giá, chanh', instructions: 'Chần phở nóng. Thêm gà xé và lòng gà. Chan nước dùng ít mỡ.' },
-      { name: 'Cơm Sườn Ram + Canh Bí Đao', mealType: 'lunch', calories: Math.round(ct * 0.3), protein: Math.round(pt * 0.3), carbs: Math.round(cct * 0.3), fat: Math.round(ft * 0.3), ingredients: '150g sườn ram mặn, 200g cơm, 1 chén canh bí đao thịt bằm', instructions: 'Ram sườn với nước mắm đường. Nấu canh bí đao thịt bằm nhừ.' },
-      { name: 'Chuối + Whey', mealType: isWorkout ? 'pre_workout' : 'snack', calories: Math.round(ct * 0.12), protein: Math.round(pt * 0.2), carbs: Math.round(cct * 0.15), fat: Math.round(ft * 0.1), ingredients: '1 quả chuối, 1 muỗng whey, 200ml nước', instructions: 'Xay whey với nước. Ăn kèm chuối trước tập.' },
-      { name: 'Cá Hồi Nướng + Khoai Lang', mealType: 'dinner', calories: Math.round(ct * 0.28), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.35), ingredients: '180g cá hồi phi lê, 200g khoai lang luộc, rau cải luộc', instructions: 'Nướng cá hồi với tiêu, chanh. Luộc khoai lang và rau cải.' },
-      { name: 'Sữa Chua + Hạnh Nhân', mealType: 'snack', calories: Math.round(ct * 0.08), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.1), fat: Math.round(ft * 0.15), ingredients: '200g sữa chua Hy Lạp, 20g hạnh nhân', instructions: 'Trộn sữa chua với hạnh nhân.' },
-    ],
-    [
-      { name: 'Xôi Gà + Chả Cốm', mealType: 'breakfast', calories: Math.round(ct * 0.22), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.2), ingredients: '150g xôi gà (xôi 100g + gà xé 80g), 1 miếng chả cốm nhỏ', instructions: 'Hấp xôi nóng. Xé gà trộn với xôi. Chiên chả cốm giòn.' },
-      { name: 'Cơm Bò Xào Cần Tỏi', mealType: 'lunch', calories: Math.round(ct * 0.3), protein: Math.round(pt * 0.35), carbs: Math.round(cct * 0.3), fat: Math.round(ft * 0.3), ingredients: '150g thịt bò thăn, 100g cần tây, 200g cơm, tỏi, dầu hào', instructions: 'Xào bò nhanh tay với cần tây. Dọn kèm cơm nóng.' },
-      { name: 'Bánh Mì + Trứng', mealType: isWorkout ? 'pre_workout' : 'snack', calories: Math.round(ct * 0.12), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.15), fat: Math.round(ft * 0.15), ingredients: '2 lát bánh mì, 2 quả trứng ốp la, 1 muỗng dầu olive', instructions: 'Chiên trứng ốp la. Dọn kèm bánh mì nướng.' },
-      { name: 'Thịt Kho Trứng + Rau Cải', mealType: 'dinner', calories: Math.round(ct * 0.28), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.3), ingredients: '120g thịt ba chỉ kho, 1 quả trứng kho, 150g cơm, 100g rau cải luộc', instructions: 'Kho thịt với nước dừa tươi. Luộc rau cải. Dọn cơm nóng.' },
-      { name: 'Trứng Luộc', mealType: 'snack', calories: Math.round(ct * 0.08), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.05), fat: Math.round(ft * 0.15), ingredients: '2 quả trứng luộc, muối tiêu chanh', instructions: 'Luộc trứng 7 phút. Chấm muối tiêu chanh.' },
-    ],
-    [
-      { name: 'Cháo Cá Lóc + Đậu Phụ', mealType: 'breakfast', calories: Math.round(ct * 0.22), protein: Math.round(pt * 0.25), carbs: Math.round(cct * 0.2), fat: Math.round(ft * 0.2), ingredients: '1 bát cháo cá lóc (cá 100g + gạo 50g), 100g đậu phụ chiên nhẹ, hành ngò', instructions: 'Nấu cháo cá lóc nhừ. Chiên đậu phụ vàng nhẹ. Rắc hành ngò.' },
-      { name: 'Cơm Gà Luộc + Nước Mắm Gừng', mealType: 'lunch', calories: Math.round(ct * 0.3), protein: Math.round(pt * 0.35), carbs: Math.round(cct * 0.3), fat: Math.round(ft * 0.3), ingredients: '180g gà luộc, 200g cơm, nước mắm gừng, rau sống', instructions: 'Luộc gà chín tới. Pha nước mắm gừng chua ngọt. Dọn rau sống.' },
-      { name: 'Sữa + Whey', mealType: isWorkout ? 'pre_workout' : 'snack', calories: Math.round(ct * 0.12), protein: Math.round(pt * 0.2), carbs: Math.round(cct * 0.15), fat: Math.round(ft * 0.1), ingredients: '250ml sữa tươi, 1 muỗng whey', instructions: 'Lắc whey với sữa. Uống lạnh trước tập.' },
-      { name: 'Cá Diêu Hồng Hấp Xì Dầu', mealType: 'dinner', calories: Math.round(ct * 0.28), protein: Math.round(pt * 0.3), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.25), ingredients: '200g cá diêu hồng, 150g cơm, rau cải xào tỏi, xì dầu, gừng', instructions: 'Hấp cá với xì dầu và gừng. Xào rau cải với tỏi.' },
-      { name: 'Pudding Casein', mealType: 'snack', calories: Math.round(ct * 0.08), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.1), fat: Math.round(ft * 0.1), ingredients: '1 muỗng casein, 200ml sữa, 10g hạt chia', instructions: 'Trộn casein với sữa và hạt chia. Để tủ lạnh 30 phút.' },
-    ],
-    [
-      { name: 'Bánh Cuốn Nóng + Chả', mealType: 'breakfast', calories: Math.round(ct * 0.22), protein: Math.round(pt * 0.2), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.25), ingredients: '3 cuốn bánh cuốn (150g), 2 miếng chả lụa, nước mắm chanh', instructions: 'Hấp bánh cuốn nóng. Cắt chả lụa. Pha nước mắm chua ngọt.' },
-      { name: 'Cơm Sườn Non Ram + Canh Rau', mealType: 'lunch', calories: Math.round(ct * 0.3), protein: Math.round(pt * 0.3), carbs: Math.round(cct * 0.3), fat: Math.round(ft * 0.3), ingredients: '150g sườn non ram, 200g cơm, 1 chén canh rau dền thịt bằm', instructions: 'Ram sườn non với nước mắm đường. Nấu canh rau dền thịt bằm.' },
-      { name: 'Chuối + Bơ Đậu Phộng', mealType: isWorkout ? 'pre_workout' : 'snack', calories: Math.round(ct * 0.12), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.15), fat: Math.round(ft * 0.15), ingredients: '1 quả chuối, 30g bơ đậu phộng', instructions: 'Ăn chuối chấm bơ đậu phộng. Năng lượng nhanh trước tập.' },
-      { name: 'Gà Rang Sả Ớt + Cơm', mealType: 'dinner', calories: Math.round(ct * 0.28), protein: Math.round(pt * 0.3), carbs: Math.round(cct * 0.25), fat: Math.round(ft * 0.25), ingredients: '180g gà xé rang sả ớt, 150g cơm, rau muống luộc', instructions: 'Xé gà rang với sả ớt giòn. Luộc rau muống. Dọn cơm nóng.' },
-      { name: 'Sữa Chua + Hạt', mealType: 'snack', calories: Math.round(ct * 0.08), protein: Math.round(pt * 0.15), carbs: Math.round(cct * 0.1), fat: Math.round(ft * 0.15), ingredients: '200g sữa chua, 20g hạt mix', instructions: 'Trộn sữa chua với hạt mix các loại.' },
-    ],
-  ];
-
-  const dayIndex = new Date().getDay();
-  return variations[dayIndex % variations.length];
+  return [{ name: 'Gợi ý món mới', mealType: 'breakfast', calories: 0, protein: 0, carbs: 0, fat: 0, ingredients: '', instructions: 'Vui lòng thử lại sau.' }];
 }
 
 export function generateWeeklyReview(weekData: any) {

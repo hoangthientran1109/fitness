@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateDailyMeals } from '@/lib/ai-coach';
+import { generateMealPlan, formatMealIngredients, formatMealInstructions } from '@/lib/meal-engine';
 
 export async function POST(req: Request) {
   try {
@@ -25,41 +26,65 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Chưa có kế hoạch dinh dưỡng. Hoàn thành onboarding trước.' }, { status: 400 });
     }
 
-    // Lấy log hôm nay (đã ăn gì chưa)
-    const todayLog = await prisma.nutritionLog.findFirst({
-      where: { userId: user.id, date: { gte: today, lt: tomorrow } },
-    });
-
     // Lấy buổi tập hôm nay
     const todayWorkout = await prisma.workoutDay.findFirst({
       where: { plan: { userId: user.id, status: 'active' }, date: { gte: today, lt: tomorrow } },
     });
 
-    // Lấy rules để tìm dị ứng/tránh
-    const rules = await prisma.personalRule.findMany({
-      where: { userId: user.id, ruleType: 'nutrition', isActive: true },
-    });
+    const isWorkoutDay = !!todayWorkout;
+    const mealFrequency = Math.max(4, Math.min(5, Math.round(nutritionPlan.caloriesTarget / 600)));
 
-    const context = {
-      caloriesTarget: nutritionPlan.caloriesTarget,
-      proteinTarget: nutritionPlan.proteinTarget,
-      carbTarget: nutritionPlan.carbTarget,
-      fatTarget: nutritionPlan.fatTarget,
-      waterTarget: nutritionPlan.waterTarget,
-      todayCaloriesSoFar: todayLog?.calories || 0,
-      todayProteinSoFar: todayLog?.protein || 0,
-      todayCarbsSoFar: todayLog?.carbs || 0,
-      todayFatSoFar: todayLog?.fat || 0,
-      foodAllergies: '',
-      foodsToAvoid: rules.map(r => r.description).join(', '),
-      mealFrequency: nutritionPlan.meals.length > 0 ? nutritionPlan.meals.length : 4,
-      isWorkoutDay: !!todayWorkout,
-      workoutFocus: todayWorkout?.focus || undefined,
+    // Use Meal Engine: Macro Target → Food Selection → Meal Generation
+    const generatedMeals = generateMealPlan(
+      {
+        calories: nutritionPlan.caloriesTarget,
+        protein: nutritionPlan.proteinTarget,
+        carbs: nutritionPlan.carbTarget,
+        fat: nutritionPlan.fatTarget,
+      },
+      mealFrequency,
+      isWorkoutDay
+    );
+
+    const meals = generatedMeals.map(m => ({
+      name: m.name,
+      mealType: m.mealType,
+      calories: m.totalMacros.calories,
+      protein: m.totalMacros.protein,
+      carbs: m.totalMacros.carbs,
+      fat: m.totalMacros.fat,
+      ingredients: formatMealIngredients(m),
+      instructions: formatMealInstructions(m),
+      items: m.items.map(i => ({
+        foodName: i.food.nameVi,
+        grams: i.grams,
+        calories: i.macros.calories,
+        protein: i.macros.protein,
+        carbs: i.macros.carbs,
+        fat: i.macros.fat,
+      })),
+    }));
+
+    // Calculate daily totals
+    const dailyTotal = {
+      calories: meals.reduce((s, m) => s + m.calories, 0),
+      protein: meals.reduce((s, m) => s + m.protein, 0),
+      carbs: meals.reduce((s, m) => s + m.carbs, 0),
+      fat: meals.reduce((s, m) => s + m.fat, 0),
     };
 
-    const meals = await generateDailyMeals(context);
-
-    return NextResponse.json({ meals, isWorkoutDay: context.isWorkoutDay, workoutFocus: context.workoutFocus });
+    return NextResponse.json({
+      meals,
+      isWorkoutDay,
+      workoutFocus: todayWorkout?.focus || undefined,
+      dailyTotal,
+      targets: {
+        calories: nutritionPlan.caloriesTarget,
+        protein: nutritionPlan.proteinTarget,
+        carbs: nutritionPlan.carbTarget,
+        fat: nutritionPlan.fatTarget,
+      },
+    });
   } catch (err: any) {
     console.error('[Nutrition Suggest] Error:', err.message);
     return NextResponse.json({ error: 'Lỗi tạo thực đơn', detail: err.message }, { status: 500 });

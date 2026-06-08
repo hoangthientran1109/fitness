@@ -1,0 +1,285 @@
+// Meal Engine — Macro-Target-First Generation
+import { FOOD_DATABASE, FoodItem, calcMacro } from './food-database';
+
+export interface MealItem {
+  food: FoodItem;
+  grams: number;
+  macros: { calories: number; protein: number; carbs: number; fat: number; fiber: number };
+}
+
+export interface GeneratedMeal {
+  name: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'pre_workout' | 'post_workout';
+  items: MealItem[];
+  totalMacros: { calories: number; protein: number; carbs: number; fat: number; fiber: number };
+}
+
+export interface MacroTarget {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+const PROTEIN_SOURCES: FoodItem[] = ['chicken_breast', 'lean_beef', 'salmon', 'tuna', 'tilapia', 'pork_lean', 'shrimp', 'whole_egg', 'egg_whites', 'tofu', 'greek_yogurt', 'whey']
+  .map(n => FOOD_DATABASE.find(f => f.name === n)!)
+  .filter(Boolean);
+
+const CARB_SOURCES: FoodItem[] = ['white_rice', 'brown_rice', 'oats', 'potato', 'sweet_potato', 'bread_wholewheat', 'bread_white', 'rice_noodle', 'corn']
+  .map(n => FOOD_DATABASE.find(f => f.name === n)!)
+  .filter(Boolean);
+
+const FAT_SOURCES: FoodItem[] = ['almonds', 'cashews', 'peanut_butter', 'olive_oil', 'avocado', 'whole_egg']
+  .map(n => FOOD_DATABASE.find(f => f.name === n)!)
+  .filter(Boolean);
+
+const VEG_SOURCES: FoodItem[] = ['broccoli', 'spinach', 'lettuce', 'tomato', 'cucumber', 'carrot']
+  .map(n => FOOD_DATABASE.find(f => f.name === n)!)
+  .filter(Boolean);
+
+const FRUIT_SOURCES: FoodItem[] = ['banana', 'apple']
+  .map(n => FOOD_DATABASE.find(f => f.name === n)!)
+  .filter(Boolean);
+
+/**
+ * Select foods to hit macro targets, divided into meals.
+ * Algorithm:
+ * 1. Determine grams of protein needed → select protein foods
+ * 2. Determine grams of carbs needed → select carb foods
+ * 3. Determine grams of fat needed → select fat foods (accounting for fat from protein/carb sources)
+ * 4. Divide across meals
+ */
+export function generateMealPlan(target: MacroTarget, mealCount: number = 4, isWorkoutDay: boolean = true): GeneratedMeal[] {
+  // Step 1: Allocate macros per meal
+  const mealTypes: GeneratedMeal['mealType'][] = determineMealTypes(mealCount, isWorkoutDay);
+  const meals: GeneratedMeal[] = [];
+
+  // Daily macro allocation (% per meal)
+  let remainingProtein = target.protein;
+  let remainingCarbs = target.carbs;
+  let remainingFat = target.fat;
+
+  // Pre-allocate fat from cooking oil (used in most meals)
+  const cookingOil = FAT_SOURCES.find(f => f.name === 'olive_oil')!;
+  const oilPerMeal = Math.floor(15 / mealCount); // ~15ml total cooking oil
+
+  const macroPerMeal = mealTypes.map((type, i) => {
+    const isBreakfast = type === 'breakfast';
+    const isLunch = type === 'lunch';
+    const isDinner = type === 'dinner';
+    const isSnack = type === 'snack' || type === 'pre_workout' || type === 'post_workout';
+
+    let calPct: number, proPct: number, carbPct: number;
+
+    if (isBreakfast) {
+      calPct = 0.25; proPct = 0.25; carbPct = 0.3;
+    } else if (isLunch) {
+      calPct = 0.30; proPct = 0.30; carbPct = 0.30;
+    } else if (isDinner) {
+      calPct = 0.28; proPct = 0.25; carbPct = 0.25;
+    } else {
+      calPct = 0.17 / mealTypes.filter(t => t === 'snack' || t === 'pre_workout' || t === 'post_workout').length;
+      proPct = 0.20 / mealTypes.filter(t => t === 'snack' || t === 'pre_workout' || t === 'post_workout').length;
+      carbPct = 0.15 / mealTypes.filter(t => t === 'snack' || t === 'pre_workout' || t === 'post_workout').length;
+    }
+
+    return {
+      type,
+      targetProtein: Math.round(target.protein * proPct),
+      targetCarbs: Math.round(target.carbs * carbPct),
+      targetFat: Math.round(target.fat * calPct * 0.5), // fat varies, rough alloc
+      targetCalories: Math.round(target.calories * calPct),
+    };
+  });
+
+  // Step 2: Build each meal by selecting foods
+  const usedProteins: FoodItem[] = [];
+  const usedCarbs: FoodItem[] = [];
+
+  for (let i = 0; i < mealTypes.length; i++) {
+    const mp = macroPerMeal[i];
+    const items: MealItem[] = [];
+    let totalPro = 0, totalCarb = 0, totalFat = 0, totalCal = 0, totalFiber = 0;
+
+    // Select protein source (rotate)
+    const proteinSrc = selectBestProtein(mp.targetProtein, usedProteins);
+    if (proteinSrc.length > 0) {
+      for (const { food, grams } of proteinSrc) {
+        const m = calcMacro(food, grams);
+        items.push({ food, grams, macros: m });
+        totalPro += m.protein; totalCarb += m.carbs; totalFat += m.fat; totalCal += m.calories; totalFiber += m.fiber;
+        usedProteins.push(food);
+      }
+    }
+
+    // Select carb source (rotate)
+    const carbSrc = selectBestCarb(mp.targetCarbs - totalCarb, usedCarbs, i === 0);
+    if (carbSrc.length > 0) {
+      for (const { food, grams } of carbSrc) {
+        const m = calcMacro(food, grams);
+        items.push({ food, grams, macros: m });
+        totalPro += m.protein; totalCarb += m.carbs; totalFat += m.fat; totalCal += m.calories; totalFiber += m.fiber;
+        usedCarbs.push(food);
+      }
+    }
+
+    // Add vegetables (always, for fiber + satiety)
+    if (mealTypes[i] === 'lunch' || mealTypes[i] === 'dinner' || mealTypes[i] === 'breakfast') {
+      const vegIdx = i % VEG_SOURCES.length;
+      const veg = VEG_SOURCES[vegIdx];
+      const vegGrams = veg.servingGrams;
+      const vegM = calcMacro(veg, vegGrams);
+      items.push({ food: veg, grams: vegGrams, macros: vegM });
+      totalPro += vegM.protein; totalCarb += vegM.carbs; totalFat += vegM.fat; totalCal += vegM.calories; totalFiber += vegM.fiber;
+    }
+
+    // Add cooking oil for lunch/dinner
+    if (mealTypes[i] === 'lunch' || mealTypes[i] === 'dinner') {
+      const oilM = calcMacro(cookingOil, oilPerMeal);
+      items.push({ food: cookingOil, grams: oilPerMeal, macros: oilM });
+      totalFat += oilM.fat; totalCal += oilM.calories;
+    }
+
+    // Add fruit for snacks/breakfast
+    if (mealTypes[i] === 'snack' || mealTypes[i] === 'breakfast') {
+      const fruitIdx = i % FRUIT_SOURCES.length;
+      const fruit = FRUIT_SOURCES[fruitIdx];
+      const fruitM = calcMacro(fruit, fruit.servingGrams);
+      items.push({ food: fruit, grams: fruit.servingGrams, macros: fruitM });
+      totalCarb += fruitM.carbs; totalCal += fruitM.calories; totalFiber += fruitM.fiber;
+    }
+
+    const mealName = buildMealName(items, mealTypes[i]);
+
+    meals.push({
+      name: mealName,
+      mealType: mealTypes[i],
+      items,
+      totalMacros: {
+        calories: Math.round(totalCal),
+        protein: Math.round(totalPro),
+        carbs: Math.round(totalCarb),
+        fat: Math.round(totalFat),
+        fiber: Math.round(totalFiber),
+      },
+    });
+  }
+
+  return meals;
+}
+
+function determineMealTypes(mealCount: number, isWorkoutDay: boolean): GeneratedMeal['mealType'][] {
+  if (mealCount <= 0) mealCount = 4;
+  if (mealCount >= 5 && isWorkoutDay) return ['breakfast', 'lunch', 'pre_workout', 'dinner', 'snack'];
+  if (mealCount >= 5) return ['breakfast', 'lunch', 'snack', 'dinner', 'snack'];
+  if (mealCount === 4 && isWorkoutDay) return ['breakfast', 'lunch', 'pre_workout', 'dinner'];
+  if (mealCount === 4) return ['breakfast', 'lunch', 'snack', 'dinner'];
+  if (mealCount === 3) return ['breakfast', 'lunch', 'dinner'];
+  return ['breakfast', 'lunch', 'dinner', 'snack'];
+}
+
+function selectBestProtein(targetProtein: number, usedSources: FoodItem[]): { food: FoodItem; grams: number }[] {
+  // Rotate: prefer unused sources first
+  const available = PROTEIN_SOURCES.filter(f => !usedSources.some(u => u.name === f.name));
+  const pool = available.length >= 3 ? available : [...available, ...PROTEIN_SOURCES];
+
+  // Pick 1-2 protein sources to hit target
+  const primary = pool[0];
+  const needed = targetProtein;
+  const gramsNeeded = Math.round((needed / primary.proteinPer100g) * 100);
+
+  // Clamp to realistic serving sizes (100-250g)
+  let grams = Math.max(100, Math.min(250, gramsNeeded));
+  grams = Math.round(grams / 50) * 50; // Round to nearest 50g
+
+  let proFromPrimary = Math.round(primary.proteinPer100g * grams / 100);
+  const result: { food: FoodItem; grams: number }[] = [{ food: primary, grams }];
+
+  // If protein still low, add eggs as secondary
+  if (proFromPrimary < targetProtein - 5 && pool.length > 1) {
+    const eggs = FOOD_DATABASE.find(f => f.name === 'whole_egg')!;
+    const eggCount = Math.min(3, Math.round((targetProtein - proFromPrimary) / (eggs.proteinPer100g * 0.5)));
+    if (eggCount > 0) {
+      const eggGrams = eggCount * 50;
+      result.push({ food: eggs, grams: eggGrams });
+    }
+  }
+
+  return result;
+}
+
+function selectBestCarb(targetCarbs: number, usedSources: FoodItem[], isBreakfast: boolean): { food: FoodItem; grams: number }[] {
+  const available = CARB_SOURCES.filter(f => !usedSources.some(u => u.name === f.name));
+  const pool = available.length >= 2 ? available : [...available, ...CARB_SOURCES];
+
+  let primary: FoodItem;
+  if (isBreakfast) {
+    primary = pool.find(f => f.name === 'oats') || pool.find(f => f.name === 'bread_wholewheat') || pool[0];
+  } else {
+    primary = pool.find(f => f.name === 'white_rice' || f.name === 'brown_rice') || pool[0];
+  }
+
+  // Ensure primary is found
+  if (!primary) primary = CARB_SOURCES[0];
+
+  const gramsNeeded = Math.round((targetCarbs / primary.carbsPer100g) * 100);
+  let grams = Math.max(100, Math.min(250, gramsNeeded));
+  grams = Math.round(grams / 25) * 25;
+
+  return [{ food: primary, grams }];
+}
+
+function buildMealName(items: MealItem[], type: string): string {
+  const typeLabels: Record<string, string> = {
+    breakfast: 'Sáng', lunch: 'Trưa', dinner: 'Tối', snack: 'Bữa Phụ',
+    pre_workout: 'Pre-Workout', post_workout: 'Post-Workout',
+  };
+  const mainFoods = items.filter(i => i.food.category === 'protein' || i.food.category === 'carb').slice(0, 2);
+  const names = mainFoods.map(i => {
+    const m = calcMacro(i.food, i.grams);
+    return `${i.food.nameVi} ${i.grams}g (${m.calories} cal, ${m.protein}g P)`;
+  });
+  return names.join(' + ') || `${typeLabels[type] || 'Bữa'} gợi ý`;
+}
+
+/** Format meal items for display */
+export function formatMealIngredients(meal: GeneratedMeal): string {
+  return meal.items.map(i => `${i.grams}g ${i.food.nameVi}`).join(', ');
+}
+
+export function formatMealInstructions(meal: GeneratedMeal): string {
+  const instructions: Record<string, string> = {
+    chicken_breast: 'Luộc hoặc nướng ức gà với ít muối tiêu',
+    lean_beef: 'Xào bò nhanh tay với tỏi, không dầu nhiều',
+    salmon: 'Nướng hoặc hấp cá hồi với chanh, tiêu',
+    tuna: 'Cá ngừ hộp ngâm nước - để ráo, trộn salad',
+    tilapia: 'Hấp cá rô phi với gừng, hành',
+    pork_lean: 'Luộc hoặc nướng thịt heo nạc',
+    shrimp: 'Luộc hoặc hấp tôm, chấm muối tiêu chanh',
+    whole_egg: 'Luộc 7 phút hoặc ốp la với ít dầu',
+    egg_whites: 'Luộc hoặc hấp lòng trắng trứng',
+    white_rice: 'Nấu cơm trắng như bình thường',
+    brown_rice: 'Nấu gạo lứt với nhiều nước hơn cơm trắng',
+    oats: 'Nấu yến mạch với nước hoặc sữa, thêm trái cây',
+    potato: 'Luộc hoặc hấp khoai tây, không chiên',
+    sweet_potato: 'Luộc hoặc nướng khoai lang',
+    greek_yogurt: 'Ăn trực tiếp hoặc trộn với trái cây',
+    broccoli: 'Hấp hoặc luộc bông cải, không nấu quá chín',
+    spinach: 'Xào nhanh với tỏi hoặc ăn sống làm salad',
+  };
+
+  const lines: string[] = [];
+  let hasInstructions = false;
+
+  for (const item of meal.items) {
+    const instr = instructions[item.food.name];
+    if (instr) {
+      lines.push(`${item.food.nameVi} (${item.grams}g): ${instr}`);
+      hasInstructions = true;
+    }
+  }
+
+  if (!hasInstructions) lines.push('Chuẩn bị nguyên liệu, nấu chín và thưởng thức.');
+
+  return lines.join('; ');
+}

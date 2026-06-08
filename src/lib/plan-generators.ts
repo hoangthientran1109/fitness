@@ -236,19 +236,28 @@ export async function generateNutritionPlan(params: {
     },
   });
 
-  const meals = getMealTemplates(params.calories, params.protein, params.carbs, params.fat);
-  for (const meal of meals) {
+  // Use meal engine — dynamic foods based on targets, not hardcoded templates
+  const { generateMealPlan } = await import('./meal-engine');
+  const generatedMeals = generateMealPlan(
+    { calories: params.calories, protein: params.protein, carbs: params.carbs, fat: params.fat },
+    Math.max(4, Math.min(5, Math.round(params.calories / 600))),
+    true
+  );
+
+  for (const m of generatedMeals) {
+    const ingredients = m.items.map(i => `${i.grams}g ${i.food.nameVi}`).join(', ');
+    const instructions = generateCookingInstructions(m);
     await prisma.meal.create({
       data: {
         nutritionPlanId: plan.id,
-        name: meal.name,
-        mealType: meal.mealType,
-        calories: meal.calories,
-        protein: meal.protein,
-        carbs: meal.carbs,
-        fat: meal.fat,
-        ingredients: meal.ingredients,
-        instructions: meal.instructions,
+        name: m.name,
+        mealType: m.mealType,
+        calories: m.totalMacros.calories,
+        protein: m.totalMacros.protein,
+        carbs: m.totalMacros.carbs,
+        fat: m.totalMacros.fat,
+        ingredients,
+        instructions,
       },
     });
   }
@@ -256,51 +265,25 @@ export async function generateNutritionPlan(params: {
   return plan;
 }
 
-function getMealTemplates(calories: number, protein: number, carbs: number, fat: number) {
-  const pct = protein / 4;
-  const cct = carbs / 3;
-  const fct = fat / 2;
-
-  return [
-    {
-      name: 'Yến Mạch Trứng',
-      mealType: 'breakfast',
-      calories: Math.round(calories * 0.25),
-      protein: Math.round(pct * 0.3),
-      carbs: Math.round(cct * 0.35),
-      fat: Math.round(fct * 0.25),
-      ingredients: '80g yến mạch, 2 quả trứng, 100ml sữa, 1 quả chuối',
-      instructions: 'Nấu yến mạch với sữa. Chiên trứng riêng. Cắt chuối lên trên.',
-    },
-    {
-      name: 'Cơm Gà',
-      mealType: 'lunch',
-      calories: Math.round(calories * 0.3),
-      protein: Math.round(pct * 0.35),
-      carbs: Math.round(cct * 0.35),
-      fat: Math.round(fct * 0.3),
-      ingredients: '150g ức gà, 200g cơm trắng, 100g bông cải xanh, 1 muỗng dầu olive',
-      instructions: 'Nướng ức gà, nấu cơm, xào bông cải với dầu olive.',
-    },
-    {
-      name: 'Sữa Chua Hy Lạp Hạt',
-      mealType: 'snack',
-      calories: Math.round(calories * 0.15),
-      protein: Math.round(pct * 0.15),
-      carbs: Math.round(cct * 0.1),
-      fat: Math.round(fct * 0.2),
-      ingredients: '200g sữa chua Hy Lạp, 30g hạnh nhân, 1 muỗng mật ong',
-      instructions: 'Trộn sữa chua với hạt và mật ong.',
-    },
-    {
-      name: 'Cá Hồi Khoai Lang',
-      mealType: 'dinner',
-      calories: Math.round(calories * 0.3),
-      protein: Math.round(pct * 0.2),
-      carbs: Math.round(cct * 0.2),
-      fat: Math.round(fct * 0.25),
-      ingredients: '150g cá hồi phi lê, 200g khoai lang, rau xanh trộn',
-      instructions: 'Nướng cá hồi và khoai lang. Dọn kèm rau xanh tươi.',
-    },
-  ];
+function generateCookingInstructions(meal: { items: { food: { nameVi: string; name: string }; grams: number }[] }): string {
+  const map: Record<string, string> = {
+    'chicken_breast': 'Luộc/nướng với ít muối tiêu',
+    'lean_beef': 'Xào nhanh tay với tỏi',
+    'salmon': 'Nướng/hấp với chanh, tiêu',
+    'tuna': 'Cá ngừ hộp ngâm nước, để ráo',
+    'tilapia': 'Hấp với gừng, hành',
+    'pork_lean': 'Luộc hoặc nướng',
+    'shrimp': 'Luộc/hấp, chấm muối tiêu chanh',
+    'whole_egg': 'Luộc 7 phút hoặc ốp la ít dầu',
+    'egg_whites': 'Luộc/hấp',
+    'greek_yogurt': 'Ăn trực tiếp hoặc với trái cây',
+    'tofu': 'Luộc hoặc chiên ít dầu',
+    'white_rice': 'Nấu cơm bình thường',
+    'brown_rice': 'Nấu với nhiều nước hơn',
+    'oats': 'Nấu với nước/sữa',
+    'sweet_potato': 'Luộc/nướng',
+    'broccoli': 'Hấp hoặc luộc',
+    'spinach': 'Xào nhanh với tỏi',
+  };
+  return meal.items.map(i => `${i.food.nameVi} (${i.grams}g): ${map[i.food.name] || 'Chế biến như thông thường'}`).join('; ');
 }
